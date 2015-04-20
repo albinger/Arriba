@@ -1,0 +1,27 @@
+{
+    "appKeys": {
+        "colon": 1,
+        "seconds": 0
+    },
+    "capabilities": [
+        "configurable"
+    ],
+    "companyName": "andrew.albinger@gmail.com",
+    "longName": "Arriba",
+    "projectType": "native",
+    "resources": {
+        "media": []
+    },
+    "sdkVersion": "3",
+    "shortName": "Arriba",
+    "targetPlatforms": [
+        "aplite",
+        "basalt"
+    ],
+    "uuid": "2363debf-686c-4c90-b84c-3fd1c976d441",
+    "versionCode": 1,
+    "versionLabel": "1.02",
+    "watchapp": {
+        "watchface": true
+    }
+}
