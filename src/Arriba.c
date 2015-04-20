@@ -21,6 +21,7 @@ enum {
 #define DOTRADIUS 5
 #define HOURLENGTH 40
 #define MINUTELENGTH 69
+#define COLORSSECOND 300
   
 GPoint dialCenter, hourEndpoint, minuteEndpoint, secondCenter;
 
@@ -28,12 +29,22 @@ GPoint dialCenter, hourEndpoint, minuteEndpoint, secondCenter;
 static void face_layer_update(Layer *layer, GContext *ctx) {
   
   // draw outline uses the stroke color
-  graphics_context_set_stroke_color(ctx, GColorWhite);   
+  #ifdef PBL_COLOR
+    graphics_context_set_stroke_color(ctx, GColorDarkGray);
+  #else
+    graphics_context_set_stroke_color(ctx, GColorWhite);   
+  #endif
   //graphics_context_set_stroke_width(ctx, 3);
+  #ifdef PBL_COLOR
+    graphics_context_set_stroke_width(ctx, 3);
+    graphics_context_set_antialiased(ctx, true);
+    
+  #else
+    //graphics_draw_circle(ctx, dialCenter, DIALRADIUS+1);
+    graphics_draw_circle(ctx, dialCenter, DIALRADIUS-1);
+  #endif
   graphics_draw_circle(ctx, dialCenter, DIALRADIUS);
-  //graphics_draw_circle(ctx, dialCenter, DIALRADIUS+1);
-  graphics_draw_circle(ctx, dialCenter, DIALRADIUS-1);
-  graphics_context_set_fill_color(ctx, GColorWhite);
+  graphics_context_set_fill_color(ctx, GColorWhite);   
   graphics_fill_circle(ctx, dialCenter, DOTRADIUS);
 }
 
@@ -46,7 +57,10 @@ static void hands_layer_update(Layer *layer, GContext *ctx) {
 	int32_t hourAngle = (now->tm_hour%12) * TRIG_MAX_ANGLE / 12;
   int32_t secondAngle = now->tm_sec * TRIG_MAX_ANGLE / 60;
   int tempY;
-	
+	#ifdef PBL_COLOR
+    graphics_context_set_antialiased(ctx, true);
+    graphics_context_set_stroke_width(ctx, 3);
+  #endif
   // Create a long-lived buffer
   static char buffer[] = "00:00";
   // Write the current hours and minutes or day and month into the buffer
@@ -77,18 +91,41 @@ static void hands_layer_update(Layer *layer, GContext *ctx) {
   //calculate outer point of hands
   graphics_context_set_stroke_color(ctx, GColorWhite);
   graphics_context_set_fill_color(ctx, GColorWhite);
+  
+  if(seconds){
+     #ifdef PBL_COLOR
+       graphics_context_set_fill_color(ctx, GColorRed);
+     
+       tempY = CENTERY + SECONDRADIUS * sin_lookup((secondAngle + COLORSSECOND + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO;
+       graphics_fill_circle(ctx,GPoint(
+         CENTERX + SECONDRADIUS * cos_lookup((secondAngle + COLORSSECOND + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO, (tempY > 122)?122:tempY),3);
+       tempY = CENTERY + SECONDRADIUS * sin_lookup((secondAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO;
+       graphics_fill_circle(ctx,GPoint(
+         CENTERX + SECONDRADIUS * cos_lookup((secondAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO, (tempY > 122)?122:tempY),3);
+       tempY = CENTERY + SECONDRADIUS * sin_lookup((secondAngle - COLORSSECOND + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO;
+       graphics_fill_circle(ctx,GPoint(
+         CENTERX + SECONDRADIUS * cos_lookup((secondAngle - COLORSSECOND + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO, (tempY > 122)?122:tempY),3);
+     #else
+       graphics_context_set_fill_color(ctx, GColorWhite); 
+       tempY = CENTERY + SECONDRADIUS * sin_lookup((secondAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO;
+       graphics_fill_circle(ctx,GPoint(
+         CENTERX + SECONDRADIUS * cos_lookup((secondAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO, (tempY > 122)?122:tempY),DOTRADIUS);
+     #endif
+   }
+  
+  #ifdef PBL_COLOR
+    graphics_context_set_stroke_width(ctx, 5);
+  #endif
   graphics_draw_line(ctx, dialCenter,
                      GPoint(CENTERX + HOURLENGTH * cos_lookup((hourAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO,
                             CENTERY + HOURLENGTH * sin_lookup((hourAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO));
  
-   graphics_draw_line(ctx, dialCenter,
-                      GPoint(CENTERX + MINUTELENGTH * cos_lookup((minuteAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO,
-                             CENTERY + MINUTELENGTH * sin_lookup((minuteAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO));
-   if(seconds){
-     tempY = CENTERY + SECONDRADIUS * sin_lookup((secondAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO;
-     graphics_fill_circle(ctx,GPoint(
-       CENTERX + SECONDRADIUS * cos_lookup((secondAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO, (tempY > 122)?122:tempY),DOTRADIUS);
-   }
+  #ifdef PBL_COLOR
+    graphics_context_set_stroke_width(ctx, 3);
+  #endif 
+  tempY = CENTERY + MINUTELENGTH * sin_lookup((minuteAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO;
+  graphics_draw_line(ctx, dialCenter,
+                      GPoint(CENTERX + MINUTELENGTH * cos_lookup((minuteAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO, (tempY > 128)?128:tempY));   
 }
 
 void handle_tick(struct tm *now, TimeUnits units_changed) {
@@ -130,7 +167,7 @@ void in_recv_handler(DictionaryIterator *received, void *context) {
 
 static void main_window_load(Window *window) {
   s_face_layer = layer_create(GRect(0,0,144,122));
-  s_hands_layer = layer_create(GRect(0,0,144,128));
+  s_hands_layer = layer_create(GRect(0,0,144,168));
 
   layer_set_update_proc(s_face_layer, face_layer_update);
   layer_set_update_proc(s_hands_layer, hands_layer_update);
@@ -159,7 +196,8 @@ static void main_window_load(Window *window) {
   }
   text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
   text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
-  layer_add_child(window_get_root_layer(window), text_layer_get_layer(s_time_layer));
+  layer_insert_below_sibling(text_layer_get_layer(s_time_layer), s_hands_layer);
+  //layer_add_child(window_get_root_layer(window), text_layer_get_layer(s_time_layer));
 }
 
 static void main_window_unload(Window *window) {
@@ -181,7 +219,11 @@ static void init() {
   
   // Create Window
   s_main_window = window_create();
-  window_set_background_color(s_main_window, GColorBlack);
+  #ifdef PBL_COLOR
+    window_set_background_color(s_main_window, GColorOxfordBlue);
+  #else
+    window_set_background_color(s_main_window, GColorBlack);
+  #endif
   window_set_window_handlers(s_main_window, (WindowHandlers) {
     .load = main_window_load,
     .unload = main_window_unload,
