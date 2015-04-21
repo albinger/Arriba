@@ -28,19 +28,15 @@ GPoint dialCenter, hourEndpoint, minuteEndpoint, secondCenter;
 // The Watchface
 static void face_layer_update(Layer *layer, GContext *ctx) {
   
-  // draw outline uses the stroke color
+  // draw outline the stroke color
   #ifdef PBL_COLOR
     graphics_context_set_stroke_color(ctx, GColorDarkGray);
-  #else
-    graphics_context_set_stroke_color(ctx, GColorWhite);   
-  #endif
-  //graphics_context_set_stroke_width(ctx, 3);
-  #ifdef PBL_COLOR
     graphics_context_set_stroke_width(ctx, 3);
     graphics_context_set_antialiased(ctx, true);
     
   #else
-    //graphics_draw_circle(ctx, dialCenter, DIALRADIUS+1);
+    graphics_context_set_stroke_color(ctx, GColorWhite); 
+  //graphics_draw_circle(ctx, dialCenter, DIALRADIUS+1);
     graphics_draw_circle(ctx, dialCenter, DIALRADIUS-1);
   #endif
   graphics_draw_circle(ctx, dialCenter, DIALRADIUS);
@@ -61,33 +57,7 @@ static void hands_layer_update(Layer *layer, GContext *ctx) {
     graphics_context_set_antialiased(ctx, true);
     graphics_context_set_stroke_width(ctx, 3);
   #endif
-  // Create a long-lived buffer
-  static char buffer[] = "00:00";
-  // Write the current hours and minutes or day and month into the buffer
-   switch(colon){
-    case 0 :
-     if(clock_is_24h_style() == true) {
-       strftime(buffer, 5, "%H%M",now);
-     }else{
-       strftime(buffer, 5, "%I%M", now); 
-     }
-    break;
-    case 1 :
-      if(clock_is_24h_style() == true) {
-        strftime(buffer, 6, "%H:%M", now);
-      }else{
-        strftime(buffer, 6, "%I:%M", now);
-      }
-    break;
-    case 2:
-      strftime(buffer, 5, "%d%m", now);
-    break;
-    case 3:
-      strftime(buffer, 5, "%m%d", now);
-    break;
-  }
-  // Display this time on the TextLayer
-  text_layer_set_text(s_time_layer, buffer);
+  
   //calculate outer point of hands
   graphics_context_set_stroke_color(ctx, GColorWhite);
   graphics_context_set_fill_color(ctx, GColorWhite);
@@ -117,18 +87,44 @@ static void hands_layer_update(Layer *layer, GContext *ctx) {
     graphics_context_set_stroke_width(ctx, 5);
   #endif
   graphics_draw_line(ctx, dialCenter,
-                     GPoint(CENTERX + HOURLENGTH * cos_lookup((hourAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO,
-                            CENTERY + HOURLENGTH * sin_lookup((hourAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO));
- 
+                     GPoint(CENTERX + HOURLENGTH * cos_lookup(((hourAngle+91*now->tm_min) + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO,
+                            CENTERY + HOURLENGTH * sin_lookup(((hourAngle+91*now->tm_min) + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO));
   #ifdef PBL_COLOR
     graphics_context_set_stroke_width(ctx, 3);
   #endif 
   tempY = CENTERY + MINUTELENGTH * sin_lookup((minuteAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO;
   graphics_draw_line(ctx, dialCenter,
-                      GPoint(CENTERX + MINUTELENGTH * cos_lookup((minuteAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO, (tempY > 128)?128:tempY));   
+                      GPoint(CENTERX + MINUTELENGTH * cos_lookup((minuteAngle + 3*TRIG_MAX_ANGLE/4)%TRIG_MAX_ANGLE) / TRIG_MAX_RATIO, (tempY > 130)?130:tempY));   
 }
 
 void handle_tick(struct tm *now, TimeUnits units_changed) {
+  // Create a long-lived buffer
+  static char buffer[] = "00:00";
+  // Write the current hours and minutes or day and month into the buffer
+   switch(colon){
+    case 0 :
+     if(clock_is_24h_style() == true) {
+       strftime(buffer, 5, "%H%M",now);
+     }else{
+       strftime(buffer, 5, "%I%M", now); 
+     }
+    break;
+    case 1 :
+      if(clock_is_24h_style() == true) {
+        strftime(buffer, 6, "%H:%M", now);
+      }else{
+        strftime(buffer, 6, "%I:%M", now);
+      }
+    break;
+    case 2:
+      strftime(buffer, 5, "%d%m", now);
+    break;
+    case 3:
+      strftime(buffer, 5, "%m%d", now);
+    break;
+  }
+  // Display this time on the TextLayer
+  text_layer_set_text(s_time_layer, buffer);
   layer_mark_dirty(s_hands_layer);
 }
 
