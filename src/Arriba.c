@@ -4,7 +4,8 @@
 static Window *s_main_window;
 static Layer *s_face_layer, *s_hands_layer;
 static TextLayer *s_time_layer;
-static int seconds, colon;
+static int seconds, colon, tap;
+static char buffer[] = "00:00";
 #define SETTINGS 0
 
 // Possible messages received from the config page
@@ -99,7 +100,7 @@ static void hands_layer_update(Layer *layer, GContext *ctx) {
 
 void handle_tick(struct tm *now, TimeUnits units_changed) {
   // Create a long-lived buffer
-  static char buffer[] = "00:00";
+  
   // Write the current hours and minutes or day and month into the buffer
    switch(colon){
     case 0 :
@@ -122,10 +123,59 @@ void handle_tick(struct tm *now, TimeUnits units_changed) {
     case 3:
       strftime(buffer, 5, "%m%d", now);
     break;
+    case 4:
+     if(tap){
+       strftime(buffer, 6, "%d.%m", now);
+     }else{
+       if(clock_is_24h_style() == true) {
+         strftime(buffer, 6, "%H:%M",now);
+       }else{
+         strftime(buffer, 6, "%I:%M", now); 
+       } 
+     }
+    break;
+    case 5:
+     if(tap){
+       strftime(buffer, 6, "%m.%d", now);
+     }else{
+       if(clock_is_24h_style() == true) {
+         strftime(buffer, 6, "%H:%M",now);
+       }else{
+         strftime(buffer, 6, "%I:%M", now); 
+       } 
+     }
+    break; 
   }
   // Display this time on the TextLayer
   text_layer_set_text(s_time_layer, buffer);
   layer_mark_dirty(s_hands_layer);
+}
+
+static void tap_handler(AccelAxisType axis, int32_t direction) {
+  struct tm *now;
+  time_t t = time(NULL);
+  now = localtime(&t);
+  APP_LOG(APP_LOG_LEVEL_INFO,"tap handler");
+  
+  if(tap){
+    tap =0;
+    if(clock_is_24h_style() == true) {
+       strftime(buffer, 6, "%H:%M",now);
+     }else{
+       strftime(buffer, 6, "%I:%M", now); 
+     }
+  }else{
+    tap = 1;
+    switch(colon){
+      case 4:
+          strftime(buffer, 6, "%d.%m", now);
+      break;
+      case 5:
+        strftime(buffer, 6, "%m.%d", now);
+      break; 
+    }
+  }
+  text_layer_set_text(s_time_layer, buffer);
 }
 
 // Settings
@@ -153,10 +203,14 @@ void in_recv_handler(DictionaryIterator *received, void *context) {
   persist_write_int(SETTINGS, setstring);
   // reset the tick_timer every time settings are updated
   tick_timer_service_unsubscribe();
+  accel_tap_service_unsubscribe();
   if(seconds){
 	  tick_timer_service_subscribe(SECOND_UNIT, handle_tick);
   }else{
     tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
+  }
+  if(colon == 4 || colon == 5){
+    accel_tap_service_subscribe(tap_handler);
   }
   handle_tick(localtime(&t), SECOND_UNIT|MINUTE_UNIT|HOUR_UNIT);
 }
@@ -231,6 +285,7 @@ static void init() {
   }else{
     tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
   }
+  tap=1;
   dialCenter = GPoint(CENTERX, CENTERY);
 }
 

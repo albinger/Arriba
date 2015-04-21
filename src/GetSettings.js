@@ -15,7 +15,7 @@ Pebble.addEventListener("ready",
 Pebble.addEventListener("showConfiguration",
   function(e) {
     //Load the remote config page
-    Pebble.openURL("https://dl.dropboxusercontent.com/u/10052545/arriba1_01.html");
+    Pebble.openURL("https://dl.dropboxusercontent.com/u/10052545/arriba1_05.html");
   }
 );
 
