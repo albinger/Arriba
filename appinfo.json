@@ -1,7 +1,9 @@
 {
     "appKeys": {
+        "basalt_colors": 2,
         "colon": 1,
-        "seconds": 0
+        "seconds": 0,
+        "theme": 3
     },
     "capabilities": [
         "configurable"
@@ -20,7 +22,7 @@
     ],
     "uuid": "2363debf-686c-4c90-b84c-3fd1c976d441",
     "versionCode": 1,
-    "versionLabel": "1.05",
+    "versionLabel": "1.07",
     "watchapp": {
         "watchface": true
     }
